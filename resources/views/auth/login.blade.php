@@ -124,7 +124,7 @@
                                 <tbody>
                                   <tr>
                                     <td>Username</td>
-                                    <td>maqsudur_rahman</td>
+                                    <td>ethnica</td>
                                   </tr>
                                   <tr>
                                     <td>Password</td>

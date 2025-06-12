@@ -148,10 +148,10 @@
                                     <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Course Name</th>
-                                        <th>Course Code</th>
-                                        <th>Credit</th>
-                                        <th>Course Type</th>
+                                        <th>Subject Name</th>
+                                        <th>Subject Code</th>
+                                        <!-- <th>Credit</th> -->
+                                        <th>Subject Type</th>
                                         <th>Status</th>
                                     </tr>
                                     </thead>
@@ -163,7 +163,7 @@
                                             <td>{{ $loop->iteration }}</td>
                                             <td>{{ $course->course_name }}</td>
                                             <td>{{ $course->course_code }}</td>
-                                            <td>{{ $course->credit }}</td>
+                                            <!-- <td>{{ $course->credit }}</td> -->
                                             <td>{{ $course->course_type == 0 ? 'Theory' : 'Sessional' }}</td>
                                             <td>{{ $course->is_active == 'yes' ? 'Active' : 'Inactive' }}</td>
                                         </tr>

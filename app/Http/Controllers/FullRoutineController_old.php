@@ -16,36 +16,36 @@ use Illuminate\Http\Request;
 use App\Models\YearlySession;
 use App\Models\TeachersOffday;
 use App\Models\RoutineCommittee;
-use App\Models\User;
 use Barryvdh\DomPDF\Facade as PDF;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
-
 class FullRoutineController extends MasterController
 {
-    /*public function index($yearly_session)
+    public function index($yearly_session)
     {
         $slots = Day::with(['routine', 'routine.course', 'routine.teacher', 'routine.teacher.user', 'routine.room', 'routine.day', 'routine.time_slot'])->get();
 
         $day_wise_slots = DayWiseSlot::with('day', 'time_slot')->get();
 
-        $sections = DB::table('dept_sections')
-            ->select(
-                'sections.id as section_id',
-                'sections.section_name',
-                'sections.type as section_type',
-                'departments.id as batch_id',
-                'departments.department_name'
-            )
-            ->leftJoin('sections', 'sections.id', '=', 'dept_sections.section_id')
-            ->leftJoin('departments', 'departments.id', '=', 'dept_sections.department_id')
-            ->where('dept_sections.is_active', 'yes')
+        // $sections = Student::select('*', 'sections.id as section_id', 'batch.id as batch_id')
+        //     ->leftJoin('section_students', 'section_students.student_id', '=', 'students.id')
+        //     ->leftJoin('sections', 'sections.id', '=', 'section_students.section_id')
+        //      ->leftJoin('batch', 'students.batch_id', '=', 'batch.id')
+        //      ->leftJoin('shifts', 'shifts.id', '=', 'batch.shift_id')
+        //     ->leftJoin('departments', 'departments.id', '=', 'batch.department_id')
+        //     ->where('batch.is_active','yes')
+        //     ->get();
+
+        $sections = Student::select('*', 'sections.id as section_id')
+            ->leftJoin('section_students', 'section_students.student_id', '=', 'students.id')
+            ->leftJoin('sections', 'sections.id', '=', 'section_students.section_id')
+            // ->leftJoin('batch', 'students.batch_id', '=', 'batch.id')
+            // ->leftJoin('shifts', 'shifts.id', '=', 'batch.shift_id')
+            // ->leftJoin('departments', 'departments.id', '=', 'batch.department_id')
+            // ->where('batch.is_active','yes')
             ->get();
-
-       // dd($sections);
-
 
         $last_created_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.created_at')->leftJoin('users', 'users.id', '=', 'routine.created_by')->orderBy('routine.created_at', 'DESC')->get()->first();
 
@@ -64,95 +64,7 @@ class FullRoutineController extends MasterController
         $rooms = Room::where('is_active', 'yes')->get();
 
         return view('admin.routine.index', compact('sections', 'slots', 'rooms', 'teachers', 'courses', 'yearly_session', 'day_wise_slots', 'request_check', 'last_created_by', 'last_edited_by', 'assigned_class_distinct_day_count'));
-    }*/
-
-    public function index($yearly_session, $day = null)
-    {
-        $day = $day ?? request()->query('day');
-        $today = $day ?? now()->format('l');
-        //dd($today);
-        //$selected_day = request()->get('day') ?? now()->format('l');
-        // $today = now()->format('l'); // e.g., 'Wednesday'
-        //$today =  'Wednesday';
-
-        // Fetch slots only for today
-        $slots = Day::with([
-            'routine',
-            'routine.course',
-            'routine.teacher',
-            'routine.teacher.user',
-            'routine.room',
-            'routine.day',
-            'routine.time_slot'
-        ])
-            ->where('day_title', $today)
-            ->get();
-
-        $day_wise_slots = DayWiseSlot::with('day', 'time_slot')
-            ->whereRelation('time_slot', 'is_active', 'yes')
-            ->orderBy('day_wise_slots.weight', 'asc')
-            ->get();
-
-        $sections = DB::table('dept_sections')
-            ->select(
-                'sections.id as section_id',
-                'sections.section_name',
-                'sections.type as section_type',
-                'departments.id as batch_id',
-                'departments.department_name'
-            )
-            ->leftJoin('sections', 'sections.id', '=', 'dept_sections.section_id')
-            ->leftJoin('departments', 'departments.id', '=', 'dept_sections.department_id')
-            ->where('dept_sections.is_active', 'yes')
-            ->get();
-
-        $last_created_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.created_at')
-            ->leftJoin('users', 'users.id', '=', 'routine.created_by')
-            ->orderBy('routine.created_at', 'DESC')
-            ->first();
-
-        $last_edited_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.updated_at')
-            ->leftJoin('users', 'users.id', '=', 'routine.edited_by')
-            ->orderBy('routine.updated_at', 'DESC')
-            ->whereNotNull('routine.edited_by')
-            ->first();
-
-        $teachers = Teacher::select('teachers.*')
-            ->join('users', 'users.id', '=', 'teachers.user_id')
-            ->with(['user', 'rank'])
-            ->where('teachers.is_active', 'yes')
-            ->orderBy('users.lastname', 'asc')
-            ->get();
-
-
-        $assigned_class_distinct_day_count = FullRoutine::selectRaw('teacher_id, COUNT(DISTINCT day_id) as day_count')
-            ->groupBy('teacher_id')
-            ->get();
-
-        $request_check = RoutineCommittee::where('receiver_id', Auth::user()->id)->first();
-
-        $courses = Course::where('is_active', 'yes')->get();
-        $rooms = Room::where('is_active', 'yes')->get();
-
-        return view('admin.routine.index', compact(
-            'sections',
-            'slots',
-            'rooms',
-            'teachers',
-            'courses',
-            'yearly_session',
-            'day_wise_slots',
-            'request_check',
-            'last_created_by',
-            'last_edited_by',
-            'assigned_class_distinct_day_count',
-            'today'
-        ));
     }
-
-
-
-
 
     public function batch_search()
     {
@@ -545,17 +457,17 @@ class FullRoutineController extends MasterController
                 }
             }
 
-            // $total_consecutive_theory_class = $prev_without_batch + $next_without_batch;
-            // $total_consecutive_theory_class_batch_wise = $prev_with_batch + $next_with_batch;
+            $total_consecutive_theory_class = $prev_without_batch + $next_without_batch;
+            $total_consecutive_theory_class_batch_wise = $prev_with_batch + $next_with_batch;
 
-            // if ($total_consecutive_theory_class_batch_wise >= 1) {
-            //     $message = ['type' => 'error', 'text' => 'Can not take 2 consecutive theory classes of same batch!'];
-            //     return json_encode($message);
-            // }
-            // if ($total_consecutive_theory_class > 1) {
-            //     $message = ['type' => 'error', 'text' => 'Can not take 3 consecutive theory classes in one day!'];
-            //     return json_encode($message);
-            // }
+            if ($total_consecutive_theory_class_batch_wise >= 1) {
+                $message = ['type' => 'error', 'text' => 'Can not take 2 consecutive theory classes of same batch!'];
+                return json_encode($message);
+            }
+            if ($total_consecutive_theory_class > 1) {
+                $message = ['type' => 'error', 'text' => 'Can not take 3 consecutive theory classes in one day!'];
+                return json_encode($message);
+            }
         }
 
         //            dd('ok');
@@ -642,10 +554,10 @@ class FullRoutineController extends MasterController
         //If data exists
         if ($exists == 0) {
             //If data room wise time slot data exists
-            // if ($exist_room_time_slot > 0) {
-            //     $message = ['type' => 'error', 'text' => 'Can not assign class on same room at same time slot'];
-            //     return json_encode($message);
-            // }
+            if ($exist_room_time_slot > 0) {
+                $message = ['type' => 'error', 'text' => 'Can not assign class on same room at same time slot'];
+                return json_encode($message);
+            }
 
             //If teachers offday
             if ($teacher_offday > 0) {
@@ -743,47 +655,6 @@ class FullRoutineController extends MasterController
         Session::flash('message', 'Routine Cell Delete Successful!!');
         return back();
     }
-    public function proxyStore(Request $request)
-    {
-        $request->validate([
-            'full_routine_id' => 'required|integer|exists:routine,id',
-            'proxy_teacher_id' => 'required|integer|exists:teachers,id',
-            'proxy_date' => 'required|date',
-        ]);
 
-
-        // Update or create proxy record
-        ProxyRoutine::updateOrCreate(
-            [
-                'full_routine_id' => $request->full_routine_id,
-                'proxy_date' => $request->proxy_date,
-            ],
-            [
-                'proxy_teacher_id' => $request->proxy_teacher_id,
-            ]
-        );
-        $teacher = User::find($request->proxy_teacher_id);
-        $phone = $teacher->contact;
-
-        $routine = \App\Models\FullRoutine::with('time_slot')->find($request->full_routine_id);
-
-        if (!$routine || !$routine->time_slot) {
-            return back()->with('error', 'Time slot not found for the selected routine.');
-        }
-
-        $fromTime = \Carbon\Carbon::createFromFormat('H:i:s', $routine->time_slot->from)->format('g:i A');
-        $toTime = \Carbon\Carbon::createFromFormat('H:i:s', $routine->time_slot->to)->format('g:i A');
-        $formattedDate = \Carbon\Carbon::parse($request->proxy_date)->format('F j, Y');
-
-        $departmentName = $routine->batch->department_name ?? 'Unknown Department';
-        $sectionName = $routine->section->section_name ?? 'Unknown Section';
-
-        // $SmsText = "You have a proxy class on {$formattedDate} in {$departmentName}({$sectionName}) \n- ethnica";
-
-
-        // $url = "http://smpp.revesms.com:7788/sendtext?apikey=31ba9c0faae8cc74&secretkey=8eb1689e&callerID=1232&toUser=$phone&messageContent=" . rawurlencode($SmsText);
-        // $response = file_get_contents($url);
-
-        return back()->with('success', 'Proxy teacher assigned successfully!');
-    }
+ 
 }

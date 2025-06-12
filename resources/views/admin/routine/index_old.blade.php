@@ -13,7 +13,7 @@
         top: 121px;
         width: 100%;
         z-index: 1;
-        r transition: 0.5s ease;
+        transition: 0.5s ease;
         left: 0;
     }
 
@@ -46,7 +46,7 @@
                 <div class="card">
                     <div class="card-body">
                         <div class="mt-0 header-title mb-4">
-                            <!-- Assign Routine -->
+                            Assign Routine
 
                             @if(Auth::user()->role == 'admin')
                             <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target=".routine_reset_{{$yearly_session}}">Full Routine Reset</button>
@@ -69,7 +69,7 @@
                             </div>
 
                             @endif
-                            <!--<div class="float-right font-14">
+                           <!-- <div class="float-right font-14">
                                 @if($last_created_by)
                                 <span> Last Data Input by <strong>
                                         {{ ucwords($last_created_by->firstname." ".$last_created_by->lastname) }}
@@ -103,10 +103,6 @@
                             {{ Session('message') }}
                         </div>
                         @endif
-                        @if(session('success'))
-                        <div class="alert alert-success">{{ session('success') }}</div>
-                        @endif
-
                         @if (Session::has('delete-message'))
                         <div class="alert alert-danger alert-dismissable">
                             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x
@@ -121,69 +117,43 @@
                                 {{ $slot->day_title }}
                             </strong>
                         </h3>
-                        <form method="GET" action="{{ route('full_routine', ['yearly_session' => $yearly_session]) }}">
-                            <div class="form-inline mb-3">
-                                <label for="day" class="mr-2">Select Day:</label>
-                                <select name="day" id="day" class="form-control mr-2" onchange="this.form.submit()">
-                                    @foreach(['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as $dayOption)
-                                    <option value="{{ $dayOption }}" {{ $today == $dayOption ? 'selected' : '' }}>
-                                        {{ $dayOption }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </form>
-
-
                         <table class="table table-striped table-bordered dt-responsive nowrap"
                             style="border-collapse: collapse; border-spacing: 0; width: 100%;">
                             <thead>
-                                @php
-                                $period = 1;
-                                @endphp
-
                                 <tr>
                                     <th class="p-0" style="overflow: hidden">
-                                        <span class="px-3 py-2 d-block border-bottom">Time</span>
-                                        <span class="px-3 py-2 d-block">Class</span>
+                                        <span class="px-3 py-2 d-block border-bottom">Batch</span>
+                                        <span class="px-3 py-2 d-block">Class Slots</span>
                                     </th>
-
-
+                                    @php $flag = 0 @endphp
                                     @foreach($day_wise_slots as $timeslot)
                                     @if ($slot->id == $timeslot->day_id)
+                                    @php $flag = 1 @endphp
+                                    @else @php $flag = 0 @endphp
+                                    @endif
+                                    @if($flag == 1)
                                     <th class="p-0 text-center" style="overflow: hidden">
-
-                                        <span class="px-3 py-2 d-block">
-                                            {{ date('g:i a', strtotime($timeslot->time_slot->from)) }} - {{ date('g:i a', strtotime($timeslot->time_slot->to)) }}
+                                        <span class="px-3 py-2 d-block">{{ date('g:i a', strtotime($timeslot->time_slot->from)).'-'.date('g:i a', strtotime($timeslot->time_slot->to)) }}</span>
+                                        <span class="bg-success px-3 py-2 d-block text-light">
+                                            @if(Auth::user()->role == 'admin')
+                                            <input data-id="{{ $timeslot->id }}" min="1" max="9" class="class_slot text-light border-0 bg-transparent text-center w-100" type="number" value="{{ $timeslot->class_slot }}">
+                                            @else
+                                            <span>{{ $timeslot->class_slot }}</span>
+                                            @endif
                                         </span>
 
-                                        <!-- <span class="bg-success px-3 py-2 d-block text-light">
-                                            @php
-                                            $suffix = 'th';
-                                            if (!in_array($period % 100, [11, 12, 13])) {
-                                            $suffix = match($period % 10) {
-                                            1 => 'st',
-                                            2 => 'nd',
-                                            3 => 'rd',
-                                            default => 'th',
-                                            };
-                                            }
-                                            @endphp
-                                            {{ $period . $suffix . ' Period' }}
-                                        </span>-->
                                     </th>
-                                    @php $period++; @endphp
                                     @endif
                                     @endforeach
                                 </tr>
-
                             </thead>
                             <tbody>
 
                                 @foreach($sections as $section)
                                 <tr>
-                                    <td class="bg-info text-white" style="width: 140px; overflow: hidden; white-space: normal; word-wrap: break-word;">
-                                        {{ $section->department_name }}<br>{{ $section->section_name }}
+                                    <td>
+                                        {{ $section->department_name.'('.$section->section_name}})
+
                                     </td>
                                     @foreach($day_wise_slots as $timeslot)
                                     @if ($slot->id == $timeslot->day_id)
@@ -202,82 +172,46 @@
 
                                         @if($timeslot->day_id == $routine->day_id && $timeslot->time_slot_id == $routine->time_slot_id && $routine->batch_id == $section->batch_id && $section->section_id == $routine->section_id && $routine->yearly_session_id == $yearly_session)
 
+                                        <span class="position-relative p-2 text-center d-block {{ ($routine->course->course_type == '0') ? 'bg-warning text-dark' : 'bg-danger text-light'}}">
 
-                                        @php
-                                        $todayDay = \Carbon\Carbon::now()->format('d');
-                                        $proxy = \App\Models\ProxyRoutine::where('full_routine_id', $routine->id)
-                                        ->whereRaw('DAY(proxy_date) = ?', [$todayDay])
-                                        ->first();
+                                            {{ $routine->course->course_name}} {{ $routine->course->course_type == '0' ? '(T)': '(L)' }} <br> {{ $routine->room->building.'-'.$routine->room->room_no }} <br> {{ $routine->teacher->user->firstname." ".$routine->teacher->user->lastname }}
+                                            @php
+                                            $routine_id = $routine->id;
+                                            $day_id = $routine->day_id;
+                                            $time_slot_id = $routine->time_slot_id;
+                                            $batch_id = $routine->batch_id;
+                                            $section_id = $routine->section_id;
+                                            $yearly_session_id = $routine->yearly_session_id;
+                                            $room_id = $routine->room_id;
+                                            $course_id = $routine->course_id;
+                                            $teacher_id = $routine->teacher_id;
+                                            @endphp
 
-                                        $isProxy = $proxy && $proxy->proxyTeacher;
-                                        @endphp
+                                            @if(($request_check && ($request_check->request_status == "active" && $request_check->expired_date >= now())) || Auth::user()->role == 'superadmin' || Auth::user()->role == 'admin' || Auth::user()->in_committee == 'yes')
 
-
-
-                                        <span class="position-relative p-2 text-center d-block
-    @if($isProxy)
-        text-white
-    @else
-        {{ ($routine->course->course_type == '0') ? 'bg-warning text-dark' : 'bg-danger text-light' }}
-    @endif"
-                                            @if($isProxy)
-                                            style="background-color: #dc3545;" {{-- Bootstrap red --}}
-                                            @endif>
-
-                                            {{ $routine->course->course_name }}<br>
-                                            <!--{{ $routine->room->building . '-' . $routine->room->room_no }}<br>-->
-
-                                            @if($isProxy)
-                                            {{ $routine->teacher->user->firstname . ' ' . $routine->teacher->user->lastname }}<br>
-                                            (Proxy:{{ $proxy->proxyTeacher->user->firstname . ' ' . $proxy->proxyTeacher->user->lastname }} )
-                                            @else
-                                            @if ($routine->teacher && $routine->teacher->user)
-                                            {{ $routine->teacher->user->firstname . ' ' . $routine->teacher->user->lastname }}
-                                            @else
-                                            <span class="text-muted">No Teacher Assigned</span>
-                                            @endif
-                                            @endif
-                                        </span>
+                                            <button style="right: 0;top: 3px" class="position-absolute btn btn-sm btn-dark" data-toggle="modal" data-target=".data_delete_{{ $routine_id }}">X</button>
 
 
+                                            <div class="modal fade data_delete_{{ $routine_id }}" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header text-dark">
+                                                            <h5>Do you want to delete this?!</h5>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            {!! Form::open(['route' => ['routine_cell_delete'],'style' => 'display:inline']) !!}
+                                                            {!! Form::hidden('id',$routine_id) !!}
 
-                                        @php
-                                        $routine_id = $routine->id;
-                                        $day_id = $routine->day_id;
-                                        $time_slot_id = $routine->time_slot_id;
-                                        $batch_id = $routine->batch_id;
-                                        $section_id = $routine->section_id;
-                                        $yearly_session_id = $routine->yearly_session_id;
-                                        $room_id = $routine->room_id;
-                                        $course_id = $routine->course_id;
-                                        $teacher_id = $routine->teacher_id;
-                                        @endphp
+                                                            {!! Form::submit('Yes', ['class' => 'btn btn-lg btn-danger']) !!}
 
-                                        @if(($request_check && ($request_check->request_status == " active" && $request_check->expired_date >= now())) || Auth::user()->role == 'superadmin' || Auth::user()->role == 'admin' || Auth::user()->in_committee == 'yes')
-
-                                        <!-- <button style="right: 0;top: 3px" class="position-absolute btn btn-sm btn-dark" data-toggle="modal" data-target=".data_delete_{{ $routine_id }}">X</button> -->
-
-
-                                        <div class="modal fade data_delete_{{ $routine_id }}" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header text-dark">
-                                                        <h5>Do you want to delete this?!</h5>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        {!! Form::open(['route' => ['routine_cell_delete'],'style' => 'display:inline']) !!}
-                                                        {!! Form::hidden('id',$routine_id) !!}
-
-                                                        {!! Form::submit('Yes', ['class' => 'btn btn-lg btn-danger']) !!}
-
-                                                        <button type="button" class="btn btn-lg btn-primary waves-effect waves-light" data-toggle="modal" data-target=".data_delete_{{ $routine_id }}"> Cancel </button>
-                                                        {!! Form::close() !!}
+                                                            <button type="button" class="btn btn-lg btn-primary waves-effect waves-light" data-toggle="modal" data-target=".data_delete_{{ $routine_id }}"> Cancel </button>
+                                                            {!! Form::close() !!}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                        </div>
-                                        @endif
+                                            </div>
+                                            @endif
                                         </span>
                                         @endif
 
@@ -287,29 +221,9 @@
 
                                         @if(($request_check && ($request_check->request_status == "active" && $request_check->expired_date >= now())) || Auth::user()->role == 'superadmin' || Auth::user()->role == 'admin' || Auth::user()->in_committee == 'yes')
                                         <span class="d-block text-center">
-                                            <!-- Always show Assign button -->
-                                            <button type="button" class="m-2 btn btn-sm btn-primary data_modal" data-toggle="modal" data-target=".bs-example-modal-center{{ 'batch'.$section->batch_id.'_section'.$section->section_id.'_day'.$slot->day_title.'_time'.$timeslot->time_slot->id  }}">
-                                                Assign
-                                            </button>
-                                            <!-- Show Proxy button only if routine (assigned teacher) exists -->
-                                            @if(isset($routine) && $routine_id)
-                                            <button type="button" class="m-2 btn btn-sm btn-info" data-toggle="modal" data-target=".proxy_modal{{ 'batch'.$section->batch_id.'_section'.$section->section_id.'_day'.$slot->day_title.'_time'.$timeslot->time_slot->id }}">
-                                                Proxy
-                                            </button>
-                                            @endif
-
-
-
-                                            @if(isset($routine_id) && $routine_id)
-                                            <!-- Delete Button -->
-                                            <button type="button" class="m-2 btn btn-sm btn-danger" data-toggle="modal" data-target=".data_delete_{{ $routine_id }}">
-                                                Delete
-                                            </button>
-                                            @endif
-
+                                            <button type="button" class="m-2 btn btn-sm btn-primary data_modal" data-toggle="modal" data-target=".bs-example-modal-center{{ 'batch'.$section->batch_id.'_section'.$section->section_id.'_day'.$slot->day_title.'_time'.$timeslot->time_slot->id  }}">Assign / Edit</button>
                                         </span>
                                         @endif
-
 
                                         <div class="modal fade bs-example-modal-center{{ 'batch'.$section->batch_id.'_section'.$section->section_id.'_day'.$slot->day_title.'_time'.$timeslot->time_slot->id  }}" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
 
@@ -342,7 +256,7 @@
                                                                     <select name="teacher_id" class="form-control" required>
                                                                         <option value="">Select</option>
                                                                         @foreach($teachers as $teacher)
-                                                                        <option value="{{$teacher->id}}" {{ $teacher_id ==  $teacher->id ? 'selected' : '' }}>{{ $teacher->user->firstname.'-'.$teacher->user->lastname}}</option>
+                                                                        <option value="{{$teacher->id}}" {{ $teacher_id ==  $teacher->id ? 'selected' : '' }}>{{ $teacher->user->firstname.'-'.$teacher->user->lastname.' | '.$teacher->rank->rank }}</option>
                                                                         @endforeach
                                                                     </select>
                                                                 </div>
@@ -356,7 +270,7 @@
                                                                     <select data-batch="{{ $section->batch_id }}" data-section="{{$section->section_id}}" data-time="{{ $timeslot->time_slot_id }}" data-day="{{ $timeslot->day_id }}" name="course_id" class="course form-control" required>
                                                                         <option value="">Select</option>
                                                                         @foreach($courses as $course)
-                                                                        <option value="{{$course->id}}" {{ $course_id ==  $course->id ? 'selected' : '' }}>{{ $course->course_name }}</option>
+                                                                        <option value="{{$course->id}}" {{ $course_id ==  $course->id ? 'selected' : '' }}>{{ $course->course_code.'-'.$course->course_name }}</option>
                                                                         @endforeach
                                                                     </select>
                                                                     <div class="additional_slot"></div>
@@ -385,63 +299,12 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <!-- Proxy Modal -->
-                                        <div class="modal fade proxy_modal{{ 'batch'.$section->batch_id.'_section'.$section->section_id.'_day'.$slot->day_title.'_time'.$timeslot->time_slot->id }}" tabindex="-1" role="dialog">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Assign Proxy Teacher</h5>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <form action="{{ route('proxy.store') }}" method="POST">
-                                                            @csrf
-                                                            <input type="hidden" name="full_routine_id" value="{{ $routine_id }}">
-                                                            <!-- <input type="hidden" name="proxy_date" value="{{ now()->format('Y-m-d') }}"> -->
-                                                            <div class="form-group">
-                                                                <label for="proxy_date">Proxy Date</label>
-                                                                <input type="date" name="proxy_date" class="form-control" required value="{{ old('proxy_date', now()->format('Y-m-d')) }}">
-                                                            </div>
-                                                            <div class="form-group">
-                                                                <label for="proxy_teacher_id">Select Teacher</label>
-                                                                <select name="proxy_teacher_id" class="form-control" required>
-                                                                    <option value="">Select</option>
-                                                                    @foreach($teachers as $teacher)
-
-                                                                    <option value="{{ $teacher->id }}"
-                                                                        {{ old('proxy_teacher_id', $proxy->proxy_teacher_id ?? '') == $teacher->id ? 'selected' : '' }}>
-                                                                        {{ $teacher->user->firstname.' '.$teacher->user->lastname }}
-                                                                    </option>
-
-                                                                    @endforeach
-                                                                </select>
-                                                            </div>
-
-                                                            <button type="submit" class="btn btn-success">Save Proxy</button>
-                                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        @if(!isset($routine_id) || !$routine_id)
-                                        @if(!(($request_check && ($request_check->request_status == "active" && $request_check->expired_date >= now())) || Auth::user()->role == 'superadmin' || Auth::user()->role == 'admin' || Auth::user()->in_committee == 'yes'))
-                                        <span class="d-block text-center py-2" style="background-color: #e6f7ff; color: #007bff; border-radius: 4px; font-weight: 600;">
-                                            ---
-                                        </span>
-                                        @endif
-                                        @endif
-
-
 
                                     </td>
                                     @endif
                                     @endforeach
-
                                 </tr>
                                 @endforeach
-
-
                             </tbody>
                         </table>
                         @endforeach
@@ -597,6 +460,5 @@
         }
     }
 </script>
-
 
 @endpush

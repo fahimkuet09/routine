@@ -5,5 +5,5 @@
       Anything you want
     </div> --}}
     <!-- Default to the left -->
-    <strong>Copyright &copy; {{ \Carbon\Carbon::now()->year }} <a href="https://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
+    <strong>Copyright &copy; {{ \Carbon\Carbon::now()->year }} <a href="https://ethnicabd.com/">Ethnica School and College</a>.</strong> All rights reserved.
   </footer>

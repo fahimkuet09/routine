@@ -13,7 +13,7 @@
         top: 121px;
         width: 100%;
         z-index: 1;
-        r transition: 0.5s ease;
+        transition: 0.5s ease;
         left: 0;
     }
 
@@ -121,20 +121,6 @@
                                 {{ $slot->day_title }}
                             </strong>
                         </h3>
-                        <form method="GET" action="{{ route('full_routine', ['yearly_session' => $yearly_session]) }}">
-                            <div class="form-inline mb-3">
-                                <label for="day" class="mr-2">Select Day:</label>
-                                <select name="day" id="day" class="form-control mr-2" onchange="this.form.submit()">
-                                    @foreach(['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as $dayOption)
-                                    <option value="{{ $dayOption }}" {{ $today == $dayOption ? 'selected' : '' }}>
-                                        {{ $dayOption }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </form>
-
-
                         <table class="table table-striped table-bordered dt-responsive nowrap"
                             style="border-collapse: collapse; border-spacing: 0; width: 100%;">
                             <thead>
@@ -148,16 +134,13 @@
                                         <span class="px-3 py-2 d-block">Class</span>
                                     </th>
 
-
                                     @foreach($day_wise_slots as $timeslot)
                                     @if ($slot->id == $timeslot->day_id)
                                     <th class="p-0 text-center" style="overflow: hidden">
-
                                         <span class="px-3 py-2 d-block">
                                             {{ date('g:i a', strtotime($timeslot->time_slot->from)) }} - {{ date('g:i a', strtotime($timeslot->time_slot->to)) }}
                                         </span>
-
-                                        <!-- <span class="bg-success px-3 py-2 d-block text-light">
+                                        <span class="bg-success px-3 py-2 d-block text-light">
                                             @php
                                             $suffix = 'th';
                                             if (!in_array($period % 100, [11, 12, 13])) {
@@ -170,7 +153,7 @@
                                             }
                                             @endphp
                                             {{ $period . $suffix . ' Period' }}
-                                        </span>-->
+                                        </span>
                                     </th>
                                     @php $period++; @endphp
                                     @endif
@@ -225,17 +208,13 @@
                                             @endif>
 
                                             {{ $routine->course->course_name }}<br>
-                                            <!--{{ $routine->room->building . '-' . $routine->room->room_no }}<br>-->
+                                            {{ $routine->room->building . '-' . $routine->room->room_no }}<br>
 
                                             @if($isProxy)
                                             {{ $routine->teacher->user->firstname . ' ' . $routine->teacher->user->lastname }}<br>
                                             (Proxy:{{ $proxy->proxyTeacher->user->firstname . ' ' . $proxy->proxyTeacher->user->lastname }} )
                                             @else
-                                            @if ($routine->teacher && $routine->teacher->user)
                                             {{ $routine->teacher->user->firstname . ' ' . $routine->teacher->user->lastname }}
-                                            @else
-                                            <span class="text-muted">No Teacher Assigned</span>
-                                            @endif
                                             @endif
                                         </span>
 
@@ -291,6 +270,7 @@
                                             <button type="button" class="m-2 btn btn-sm btn-primary data_modal" data-toggle="modal" data-target=".bs-example-modal-center{{ 'batch'.$section->batch_id.'_section'.$section->section_id.'_day'.$slot->day_title.'_time'.$timeslot->time_slot->id  }}">
                                                 Assign
                                             </button>
+
                                             <!-- Show Proxy button only if routine (assigned teacher) exists -->
                                             @if(isset($routine) && $routine_id)
                                             <button type="button" class="m-2 btn btn-sm btn-info" data-toggle="modal" data-target=".proxy_modal{{ 'batch'.$section->batch_id.'_section'.$section->section_id.'_day'.$slot->day_title.'_time'.$timeslot->time_slot->id }}">
@@ -306,8 +286,8 @@
                                                 Delete
                                             </button>
                                             @endif
-
                                         </span>
+
                                         @endif
 
 
@@ -597,6 +577,5 @@
         }
     }
 </script>
-
 
 @endpush

@@ -27,9 +27,17 @@ class FullRoutine extends Model
 
     public function batch()
     {
-        return $this->belongsTo('App\Models\Batch');
+        return $this->belongsTo('App\Models\Department');
     }
 
+    public function department()
+    {
+        return $this->belongsTo('App\Models\Department');
+    }
+    public function section()
+    {
+        return $this->belongsTo('App\Models\Section');
+    }
     public function day()
     {
         return $this->belongsTo('App\Models\Day');
@@ -46,4 +54,8 @@ class FullRoutine extends Model
     }
 
 
+    public function proxyRoutine()
+    {
+        return $this->hasOne(ProxyRoutine::class);
+    }
 }

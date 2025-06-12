@@ -66,16 +66,14 @@ class FullRoutineController extends MasterController
         return view('admin.routine.index', compact('sections', 'slots', 'rooms', 'teachers', 'courses', 'yearly_session', 'day_wise_slots', 'request_check', 'last_created_by', 'last_edited_by', 'assigned_class_distinct_day_count'));
     }*/
 
-    public function index($yearly_session, $day = null)
+    public function index($yearly_session)
     {
-        $day = $day ?? request()->query('day');
-        $today = $day ?? now()->format('l');
-        //dd($today);
-        //$selected_day = request()->get('day') ?? now()->format('l');
-        // $today = now()->format('l'); // e.g., 'Wednesday'
-        //$today =  'Wednesday';
+        //$today = now()->format('l'); // e.g., 'Wednesday'
+        $today = now()->format('l'); // e.g., 'Wednesday'
 
-        // Fetch slots only for today
+
+
+        // Fetch all day-wise slots with their routine and related models
         $slots = Day::with([
             'routine',
             'routine.course',
@@ -84,14 +82,21 @@ class FullRoutineController extends MasterController
             'routine.room',
             'routine.day',
             'routine.time_slot'
-        ])
-            ->where('day_title', $today)
-            ->get();
+        ])->get();
+
+        //dd($slots);
+
+        // Reorder slots: put today first, rest remain in their original order
+        $slots = $slots->sortBy(function ($slot) use ($today) {
+            return $slot->day_title === $today ? 0 : 1;
+        });
+        //dd($slots);
 
         $day_wise_slots = DayWiseSlot::with('day', 'time_slot')
             ->whereRelation('time_slot', 'is_active', 'yes')
             ->orderBy('day_wise_slots.weight', 'asc')
             ->get();
+
 
         $sections = DB::table('dept_sections')
             ->select(
@@ -117,13 +122,9 @@ class FullRoutineController extends MasterController
             ->whereNotNull('routine.edited_by')
             ->first();
 
-        $teachers = Teacher::select('teachers.*')
-            ->join('users', 'users.id', '=', 'teachers.user_id')
-            ->with(['user', 'rank'])
-            ->where('teachers.is_active', 'yes')
-            ->orderBy('users.lastname', 'asc')
+        $teachers = Teacher::with(['user', 'rank'])
+            ->where('is_active', 'yes')
             ->get();
-
 
         $assigned_class_distinct_day_count = FullRoutine::selectRaw('teacher_id, COUNT(DISTINCT day_id) as day_count')
             ->groupBy('teacher_id')
@@ -145,11 +146,9 @@ class FullRoutineController extends MasterController
             'request_check',
             'last_created_by',
             'last_edited_by',
-            'assigned_class_distinct_day_count',
-            'today'
+            'assigned_class_distinct_day_count'
         ));
     }
-
 
 
 

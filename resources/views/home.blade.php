@@ -32,7 +32,7 @@
                 <div class="card-body">
                         <div class="form-group row mb-0">
                             <div class="col-md-6 mb-2">
-                                <a class="w-100 btn btn-primary" href="{{ route('routine') }}">
+                                <a class="w-100 btn btn-primary" href="#">
                                     View Routine
                                 </a>
                             </div>

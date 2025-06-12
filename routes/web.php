@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\FullRoutineController;
 
 /*
 |--------------------------------------------------------------------------
@@ -78,8 +79,11 @@ Route::group(['prefix' => 'admin','middleware' => 'auth'], function () {
     Route::post('day_wise_slot_store', 'DayWiseSlotController@store')->name('day_wise_slot_store')->middleware('auth_admin');
     Route::post('day_wise_slot_destroy/{id}', 'DayWiseSlotController@destroy')->name('day_wise_slot_destroy')->middleware('auth_admin');
 
-    Route::get('full_routine/{yearly_session}', 'FullRoutineController@index')->name('full_routine');
+    Route::get('full_routine/{yearly_session}/{day?}', 'FullRoutineController@index')->name('full_routine');
+
     Route::post('routine_create', 'FullRoutineController@create')->name('routine_create');
+    Route::post('/proxy-routine/store', [FullRoutineController::class, 'proxyStore'])->name('proxy.store');
+
     Route::post('course_check', 'FullRoutineController@course_check')->name('course_check');
     Route::post('routine_reset', 'FullRoutineController@reset')->name('routine_reset')->middleware('auth_admin');
     Route::post('routine_cell_delete', 'FullRoutineController@routine_cell_delete')->name('routine_cell_delete')->middleware('auth_admin');

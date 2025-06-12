@@ -44,7 +44,7 @@ class SectionController extends MasterController
     public function store(Request $request)
     {
         $this->validate($request, [
-            'section_name' => 'required|max:2|unique:sections'
+            'section_name' => 'required|max:10|unique:sections'
         ],
             [
                 'section_name.required' => 'Enter Section',
@@ -96,7 +96,7 @@ class SectionController extends MasterController
     public function update(Request $request, Section $section)
     {
         $this->validate($request, [
-            'section_name' => 'required|max:2|unique:sections,section_name,' . $section->id
+            'section_name' => 'required|max:10|unique:sections,section_name,' . $section->id
         ],
             [
                 'section_name.required' => 'Enter Section',

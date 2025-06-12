@@ -181,13 +181,13 @@
             </ul>
           </li>
 
-          <li class="nav-item dropdown">
+          <!-- <li class="nav-item dropdown">
             <a id="students" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-toggle">{{ __('Students') }}</a>
             <ul aria-labelledby="students" class="dropdown-menu border-0 shadow">
                 <li class="nav-item"><a class="nav-link" href="{{ route('students.index') }}">View All</a>
                 </li>
             </ul>
-          </li>
+          </li> -->
 
           
 
