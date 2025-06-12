@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Day;
 use App\Models\Room;
+use App\Models\User;
 use App\Models\Shift;
 use App\Models\Course;
 use App\Models\Student;
@@ -16,10 +17,10 @@ use Illuminate\Http\Request;
 use App\Models\YearlySession;
 use App\Models\TeachersOffday;
 use App\Models\RoutineCommittee;
-use App\Models\User;
 use Barryvdh\DomPDF\Facade as PDF;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
 
 
@@ -778,11 +779,14 @@ class FullRoutineController extends MasterController
         $departmentName = $routine->batch->department_name ?? 'Unknown Department';
         $sectionName = $routine->section->section_name ?? 'Unknown Section';
 
+
         // $SmsText = "You have a proxy class on {$formattedDate} in {$departmentName}({$sectionName}) \n- ethnica";
 
 
         // $url = "http://smpp.revesms.com:7788/sendtext?apikey=31ba9c0faae8cc74&secretkey=8eb1689e&callerID=1232&toUser=$phone&messageContent=" . rawurlencode($SmsText);
-        // $response = file_get_contents($url);
+
+        // $response = Http::get($url);
+        // $response = file_get_contents($url); //no need
 
         return back()->with('success', 'Proxy teacher assigned successfully!');
     }
