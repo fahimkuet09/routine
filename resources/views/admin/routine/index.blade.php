@@ -204,22 +204,25 @@
 
 
                                         @php
-                                        $todayDay = \Carbon\Carbon::now()->format('d');
-                                        $proxy = \App\Models\ProxyRoutine::where('full_routine_id', $routine->id)
-                                        ->whereRaw('DAY(proxy_date) = ?', [$todayDay])
-                                        ->first();
+                                            $today = \Carbon\Carbon::today()->toDateString();
 
-                                        $isProxy = $proxy && $proxy->proxyTeacher;
+                                            $proxy = \App\Models\ProxyRoutine::where('full_routine_id', $routine->id)
+                                                ->whereDate('proxy_date', '>=', $today)
+                                                ->orderBy('proxy_date', 'asc') // in case multiple proxies exist
+                                                ->first();
+
+                                            $isProxy = $proxy && $proxy->proxyTeacher;
                                         @endphp
 
 
 
+
                                         <span class="position-relative p-2 text-center d-block
-    @if($isProxy)
-        text-white
-    @else
-        {{ ($routine->course->course_type == '0') ? 'bg-warning text-dark' : 'bg-danger text-light' }}
-    @endif"
+                                            @if($isProxy)
+                                                text-white
+                                            @else
+                                                {{ ($routine->course->course_type == '0') ? 'bg-warning text-dark' : 'bg-danger text-light' }}
+                                            @endif"
                                             @if($isProxy)
                                             style="background-color: #dc3545;" {{-- Bootstrap red --}}
                                             @endif>
@@ -229,7 +232,7 @@
 
                                             @if($isProxy)
                                             {{ $routine->teacher->user->firstname . ' ' . $routine->teacher->user->lastname }}<br>
-                                            (Proxy:{{ $proxy->proxyTeacher->user->firstname . ' ' . $proxy->proxyTeacher->user->lastname }} )
+                                            (Proxy: {{ $proxy->proxyTeacher->user->firstname . ' ' . $proxy->proxyTeacher->user->lastname }} )
                                             @else
                                             @if ($routine->teacher && $routine->teacher->user)
                                             {{ $routine->teacher->user->firstname . ' ' . $routine->teacher->user->lastname }}
