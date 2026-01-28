@@ -204,28 +204,31 @@
 
 
                                         @php
-                                            $today = \Carbon\Carbon::today()->toDateString();
+                                        $today = \Carbon\Carbon::today()->toDateString();
 
-                                            $proxy = \App\Models\ProxyRoutine::where('full_routine_id', $routine->id)
-                                                ->whereDate('proxy_date', '>=', $today)
-                                                ->orderBy('proxy_date', 'asc') // in case multiple proxies exist
-                                                ->first();
+                                        $proxy = \App\Models\ProxyRoutine::where('full_routine_id', $routine->id)
+                                        ->whereDate('proxy_date', '>=', $today)
+                                        ->orderBy('proxy_date', 'asc') // in case multiple proxies exist
+                                        ->first();
 
-                                            $isProxy = $proxy && $proxy->proxyTeacher;
+                                        $isProxy = $proxy && $proxy->proxyTeacher;
                                         @endphp
 
 
 
+                                        <span
+                                            class="position-relative p-2 text-center d-block
+                                                @if($isProxy)
+                                                    text-white
+                                                @else
+                                                    {{ ($routine->course->course_type == '0') ? 'bg-warning text-dark' : 'bg-danger text-light' }}
+                                                @endif"
+                                            @if($isProxy && $proxy?->proxy_date)
+                                            style="background-color: #dc3545;"
+                                            title="Proxy Date: {{ \Carbon\Carbon::parse($proxy->proxy_date)->format('d M Y') }}"
+                                            @endif
+                                            >
 
-                                        <span class="position-relative p-2 text-center d-block
-                                            @if($isProxy)
-                                                text-white
-                                            @else
-                                                {{ ($routine->course->course_type == '0') ? 'bg-warning text-dark' : 'bg-danger text-light' }}
-                                            @endif"
-                                            @if($isProxy)
-                                            style="background-color: #dc3545;" {{-- Bootstrap red --}}
-                                            @endif>
 
                                             {{ $routine->course->course_name }}<br>
                                             <!--{{ $routine->room->building . '-' . $routine->room->room_no }}<br>-->

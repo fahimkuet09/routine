@@ -204,7 +204,7 @@
 
 
           @if (Auth::check())
-          <li class="nav-item dropdown">
+          <!-- <li class="nav-item dropdown">
             <a id="view_routine" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-toggle">{{ __('View routine') }}</a>
             <ul aria-labelledby="view_routine" class="dropdown-menu border-0 shadow">
                 <li class="dropdown-submenu dropdown-hover">
@@ -234,7 +234,7 @@
                 </li>
 
             </ul>
-        </li>
+        </li> -->
 
           <li class="nav-item dropdown bg-danger">
             <a id="full_routine" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="nav-link dropdown-toggle">{{ __('Generate Routine') }}</a>

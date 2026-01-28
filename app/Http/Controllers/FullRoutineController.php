@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Cache;
 
 
 class FullRoutineController extends MasterController
@@ -67,88 +68,175 @@ class FullRoutineController extends MasterController
         return view('admin.routine.index', compact('sections', 'slots', 'rooms', 'teachers', 'courses', 'yearly_session', 'day_wise_slots', 'request_check', 'last_created_by', 'last_edited_by', 'assigned_class_distinct_day_count'));
     }*/
 
+    // public function index($yearly_session, $day = null)
+    // {
+    //     $day = $day ?? request()->query('day');
+    //     $today = $day ?? now()->format('l');
+    //     //dd($today);
+    //     //$selected_day = request()->get('day') ?? now()->format('l');
+    //     // $today = now()->format('l'); // e.g., 'Wednesday'
+    //     //$today =  'Wednesday';
+
+    //     // Fetch slots only for today
+    //     $slots = Day::with([
+    //         'routine',
+    //         'routine.course',
+    //         'routine.teacher',
+    //         'routine.teacher.user',
+    //         'routine.room',
+    //         'routine.day',
+    //         'routine.time_slot'
+    //     ])
+    //         ->where('day_title', $today)
+    //         ->get();
+
+    //     $day_wise_slots = DayWiseSlot::with('day', 'time_slot')
+    //         ->whereRelation('time_slot', 'is_active', 'yes')
+    //         ->orderBy('day_wise_slots.weight', 'asc')
+    //         ->get();
+
+    //     $sections = DB::table('dept_sections')
+    //         ->select(
+    //             'sections.id as section_id',
+    //             'sections.section_name',
+    //             'sections.type as section_type',
+    //             'departments.id as batch_id',
+    //             'departments.department_name'
+    //         )
+    //         ->leftJoin('sections', 'sections.id', '=', 'dept_sections.section_id')
+    //         ->leftJoin('departments', 'departments.id', '=', 'dept_sections.department_id')
+    //         ->where('dept_sections.is_active', 'yes')
+    //         ->get();
+
+    //     $last_created_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.created_at')
+    //         ->leftJoin('users', 'users.id', '=', 'routine.created_by')
+    //         ->orderBy('routine.created_at', 'DESC')
+    //         ->first();
+
+    //     $last_edited_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.updated_at')
+    //         ->leftJoin('users', 'users.id', '=', 'routine.edited_by')
+    //         ->orderBy('routine.updated_at', 'DESC')
+    //         ->whereNotNull('routine.edited_by')
+    //         ->first();
+
+    //     $teachers = Teacher::select('teachers.*')
+    //         ->join('users', 'users.id', '=', 'teachers.user_id')
+    //         ->with(['user', 'rank'])
+    //         ->where('teachers.is_active', 'yes')
+    //         ->orderBy('users.lastname', 'asc')
+    //         ->get();
+
+
+    //     $assigned_class_distinct_day_count = FullRoutine::selectRaw('teacher_id, COUNT(DISTINCT day_id) as day_count')
+    //         ->groupBy('teacher_id')
+    //         ->get();
+
+    //     $request_check = RoutineCommittee::where('receiver_id', Auth::user()->id)->first();
+
+    //     $courses = Course::where('is_active', 'yes')->get();
+    //     $rooms = Room::where('is_active', 'yes')->get();
+
+    //     return view('admin.routine.index', compact(
+    //         'sections',
+    //         'slots',
+    //         'rooms',
+    //         'teachers',
+    //         'courses',
+    //         'yearly_session',
+    //         'day_wise_slots',
+    //         'request_check',
+    //         'last_created_by',
+    //         'last_edited_by',
+    //         'assigned_class_distinct_day_count',
+    //         'today'
+    //     ));
+    // }
     public function index($yearly_session, $day = null)
     {
         $day = $day ?? request()->query('day');
-        $today = $day ?? now()->format('l');
-        //dd($today);
-        //$selected_day = request()->get('day') ?? now()->format('l');
-        // $today = now()->format('l'); // e.g., 'Wednesday'
-        //$today =  'Wednesday';
+        $today = $day ?? now()->format('l'); // e.g., 'Wednesday'
 
-        // Fetch slots only for today
-        $slots = Day::with([
-            'routine',
-            'routine.course',
-            'routine.teacher',
-            'routine.teacher.user',
-            'routine.room',
-            'routine.day',
-            'routine.time_slot'
-        ])
-            ->where('day_title', $today)
-            ->get();
+        // Use unique cache key per day (e.g., routine_Monday, routine_Tuesday...)
+        $cacheKey = "routine_data_{$today}";
 
-        $day_wise_slots = DayWiseSlot::with('day', 'time_slot')
-            ->whereRelation('time_slot', 'is_active', 'yes')
-            ->orderBy('day_wise_slots.weight', 'asc')
-            ->get();
+        // Retrieve from cache or store forever
+        $data = Cache::rememberForever($cacheKey, function () use ($today, $yearly_session) {
 
-        $sections = DB::table('dept_sections')
-            ->select(
-                'sections.id as section_id',
-                'sections.section_name',
-                'sections.type as section_type',
-                'departments.id as batch_id',
-                'departments.department_name'
-            )
-            ->leftJoin('sections', 'sections.id', '=', 'dept_sections.section_id')
-            ->leftJoin('departments', 'departments.id', '=', 'dept_sections.department_id')
-            ->where('dept_sections.is_active', 'yes')
-            ->get();
+            $slots = Day::with([
+                'routine',
+                'routine.course',
+                'routine.teacher',
+                'routine.teacher.user',
+                'routine.room',
+                'routine.day',
+                'routine.time_slot'
+            ])
+                ->where('day_title', $today)
+                ->get();
 
-        $last_created_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.created_at')
-            ->leftJoin('users', 'users.id', '=', 'routine.created_by')
-            ->orderBy('routine.created_at', 'DESC')
-            ->first();
+            $day_wise_slots = DayWiseSlot::with('day', 'time_slot')
+                ->whereRelation('time_slot', 'is_active', 'yes')
+                ->orderBy('day_wise_slots.weight', 'asc')
+                ->get();
 
-        $last_edited_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.updated_at')
-            ->leftJoin('users', 'users.id', '=', 'routine.edited_by')
-            ->orderBy('routine.updated_at', 'DESC')
-            ->whereNotNull('routine.edited_by')
-            ->first();
+            $sections = DB::table('dept_sections')
+                ->select(
+                    'sections.id as section_id',
+                    'sections.section_name',
+                    'sections.type as section_type',
+                    'departments.id as batch_id',
+                    'departments.department_name'
+                )
+                ->leftJoin('sections', 'sections.id', '=', 'dept_sections.section_id')
+                ->leftJoin('departments', 'departments.id', '=', 'dept_sections.department_id')
+                ->where('dept_sections.is_active', 'yes')
+                ->get();
 
-        $teachers = Teacher::select('teachers.*')
-            ->join('users', 'users.id', '=', 'teachers.user_id')
-            ->with(['user', 'rank'])
-            ->where('teachers.is_active', 'yes')
-            ->orderBy('users.lastname', 'asc')
-            ->get();
+            $last_created_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.created_at')
+                ->leftJoin('users', 'users.id', '=', 'routine.created_by')
+                ->orderBy('routine.created_at', 'DESC')
+                ->first();
+
+            $last_edited_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.updated_at')
+                ->leftJoin('users', 'users.id', '=', 'routine.edited_by')
+                ->orderBy('routine.updated_at', 'DESC')
+                ->whereNotNull('routine.edited_by')
+                ->first();
+
+            $teachers = Teacher::select('teachers.*')
+                ->join('users', 'users.id', '=', 'teachers.user_id')
+                ->with(['user', 'rank'])
+                ->where('teachers.is_active', 'yes')
+                ->orderBy('users.lastname', 'asc')
+                ->get();
+
+            $assigned_class_distinct_day_count = FullRoutine::selectRaw('teacher_id, COUNT(DISTINCT day_id) as day_count')
+                ->groupBy('teacher_id')
+                ->get();
+
+            $request_check = RoutineCommittee::where('receiver_id', Auth::user()->id)->first();
+
+            $courses = Course::where('is_active', 'yes')->get();
+            $rooms = Room::where('is_active', 'yes')->get();
 
 
-        $assigned_class_distinct_day_count = FullRoutine::selectRaw('teacher_id, COUNT(DISTINCT day_id) as day_count')
-            ->groupBy('teacher_id')
-            ->get();
+            return compact(
+                'sections',
+                'slots',
+                'rooms',
+                'teachers',
+                'courses',
+                'yearly_session',
+                'day_wise_slots',
+                'request_check',
+                'last_created_by',
+                'last_edited_by',
+                'assigned_class_distinct_day_count',
+                'today'
+            );
+        });
 
-        $request_check = RoutineCommittee::where('receiver_id', Auth::user()->id)->first();
-
-        $courses = Course::where('is_active', 'yes')->get();
-        $rooms = Room::where('is_active', 'yes')->get();
-
-        return view('admin.routine.index', compact(
-            'sections',
-            'slots',
-            'rooms',
-            'teachers',
-            'courses',
-            'yearly_session',
-            'day_wise_slots',
-            'request_check',
-            'last_created_by',
-            'last_edited_by',
-            'assigned_class_distinct_day_count',
-            'today'
-        ));
+        return view('admin.routine.index', $data);
     }
 
 
@@ -443,6 +531,367 @@ class FullRoutineController extends MasterController
         }
     }
 
+    protected function refreshRoutineCache($day_id, $yearly_session_id)
+    {
+        $today = Day::where('id', $day_id)->value('day_title');
+        $cacheKey = "routine_data_{$today}";
+
+        Cache::forget($cacheKey);
+
+        Cache::rememberForever($cacheKey, function () use ($today, $yearly_session_id) {
+            $yearly_session = $yearly_session_id; // 🔑 FIXED alias for Blade view
+
+            $slots = Day::with([
+                'routine',
+                'routine.course',
+                'routine.teacher',
+                'routine.teacher.user',
+                'routine.room',
+                'routine.day',
+                'routine.time_slot'
+            ])
+                ->where('day_title', $today)
+                ->get();
+
+            $day_wise_slots = DayWiseSlot::with('day', 'time_slot')
+                ->whereRelation('time_slot', 'is_active', 'yes')
+                ->orderBy('day_wise_slots.weight', 'asc')
+                ->get();
+
+            $sections = DB::table('dept_sections')
+                ->select(
+                    'sections.id as section_id',
+                    'sections.section_name',
+                    'sections.type as section_type',
+                    'departments.id as batch_id',
+                    'departments.department_name'
+                )
+                ->leftJoin('sections', 'sections.id', '=', 'dept_sections.section_id')
+                ->leftJoin('departments', 'departments.id', '=', 'dept_sections.department_id')
+                ->where('dept_sections.is_active', 'yes')
+                ->get();
+
+            $last_created_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.created_at')
+                ->leftJoin('users', 'users.id', '=', 'routine.created_by')
+                ->orderBy('routine.created_at', 'DESC')
+                ->first();
+
+            $last_edited_by = FullRoutine::select('users.firstname', 'users.lastname', 'routine.updated_at')
+                ->leftJoin('users', 'users.id', '=', 'routine.edited_by')
+                ->orderBy('routine.updated_at', 'DESC')
+                ->whereNotNull('routine.edited_by')
+                ->first();
+
+            $teachers = Teacher::select('teachers.*')
+                ->join('users', 'users.id', '=', 'teachers.user_id')
+                ->with(['user', 'rank'])
+                ->where('teachers.is_active', 'yes')
+                ->orderBy('users.lastname', 'asc')
+                ->get();
+
+            $assigned_class_distinct_day_count = FullRoutine::selectRaw('teacher_id, COUNT(DISTINCT day_id) as day_count')
+                ->groupBy('teacher_id')
+                ->get();
+
+            $request_check = RoutineCommittee::where('receiver_id', Auth::user()->id)->first();
+
+            $courses = Course::where('is_active', 'yes')->get();
+            $rooms = Room::where('is_active', 'yes')->get();
+
+            return compact(
+                'sections',
+                'slots',
+                'rooms',
+                'teachers',
+                'courses',
+                'yearly_session', // ✅ fixed
+                'day_wise_slots',
+                'request_check',
+                'last_created_by',
+                'last_edited_by',
+                'assigned_class_distinct_day_count',
+                'today'
+            );
+        });
+    }
+
+
+    // public function create(Request $request)
+    // {
+    //     $evening_shift_id = Shift::where('slug', 'D')->pluck('id')->first();
+    //     $day_wise_slot = DayWiseSlot::where('day_id', $request->day_id)->where('time_slot_id', $request->time_slot_id)->pluck('class_slot')->first();
+    //     $course = Course::where('id', $request->course_id)->select('course_type')->first();
+    //     $time_slot_id = $request->time_slot_id;
+
+    //     $exist_class_slots = DB::table('routine')->select('*')
+    //         ->where('routine.day_id', $request->day_id)
+    //         ->where('routine.time_slot_id', $request->time_slot_id)
+    //         ->leftJoin('courses', 'courses.id', 'routine.course_id')
+    //         ->where('course_type', '0')
+    //         ->count();
+    //     $data = array();
+
+
+    //     if ($course->course_type == 0) {
+    //         $next = DB::table('time_slots')->select('id')
+    //             ->where('time_slots.from', '>', function ($query) use ($time_slot_id) {
+    //                 $query->from('time_slots')->select('time_slots.from')->where('time_slots.id', $time_slot_id);
+    //             })
+    //             ->where('type', function ($query) use ($time_slot_id) {
+    //                 $query->from('time_slots')->select('time_slots.type')->where('time_slots.id', $time_slot_id);
+    //             })
+    //             ->orderBy('time_slots.from')->limit(2)->pluck('id')->toArray();
+
+    //         $prev = DB::table('time_slots')->select('id')
+    //             ->where('time_slots.from', '<', function ($query) use ($time_slot_id) {
+    //                 $query->from('time_slots')->select('time_slots.from')->where('time_slots.id', $time_slot_id);
+    //             })
+    //             ->where('type', function ($query) use ($time_slot_id) {
+    //                 $query->from('time_slots')->select('time_slots.type')->where('time_slots.id', $time_slot_id);
+    //             })
+    //             ->orderBy('time_slots.from', 'DESC')->limit(2)->pluck('id')->toArray();
+
+
+    //         $next_with_batch = $next_without_batch = $prev_with_batch = $prev_without_batch = 0;
+    //         if ($request->routine_id == '') {
+
+    //             if (!empty($next)) {
+    //                 $next_with_batch = DB::table('routine')
+    //                     ->where('routine.day_id', $request->day_id)
+    //                     ->where('routine.time_slot_id', $next[0])
+    //                     ->where('routine.batch_id', $request->batch_id)
+    //                     ->where('routine.teacher_id', $request->teacher_id)
+    //                     ->count();
+
+    //                 $next_without_batch = DB::table('routine')
+    //                     ->where('routine.day_id', $request->day_id)
+    //                     ->whereIn('routine.time_slot_id', $next)
+    //                     ->where('routine.teacher_id', $request->teacher_id)
+    //                     ->count();
+    //             }
+    //             if (!empty($prev)) {
+    //                 $prev_with_batch = DB::table('routine')
+    //                     ->where('routine.day_id', $request->day_id)
+    //                     ->where('routine.time_slot_id', $prev[0])
+    //                     ->where('routine.batch_id', $request->batch_id)
+    //                     ->where('routine.teacher_id', $request->teacher_id)
+    //                     ->count();
+
+    //                 $prev_without_batch = DB::table('routine')
+    //                     ->where('routine.day_id', $request->day_id)
+    //                     ->whereIn('routine.time_slot_id', $prev)
+    //                     ->where('routine.teacher_id', $request->teacher_id)
+    //                     ->count();
+    //             }
+    //         } else {
+    //             if (!empty($next)) {
+    //                 $prev_with_batch = DB::table('routine')
+    //                     ->where('routine.id', '!=', $request->routine_id)
+    //                     ->where('routine.day_id', $request->day_id)
+    //                     ->where('routine.time_slot_id', $next[0])
+    //                     ->where('routine.batch_id', $request->batch_id)
+    //                     ->where('routine.teacher_id', $request->teacher_id)
+    //                     ->count();
+
+    //                 $next_without_batch = DB::table('routine')
+    //                     ->where('routine.id', '!=', $request->routine_id)
+    //                     ->where('routine.day_id', $request->day_id)
+    //                     ->whereIn('routine.time_slot_id', $next)
+    //                     ->where('routine.teacher_id', $request->teacher_id)
+    //                     ->count();
+    //             }
+
+    //             if (!empty($prev)) {
+    //                 $prev_with_batch = DB::table('routine')
+    //                     ->where('routine.id', '!=', $request->routine_id)
+    //                     ->where('routine.day_id', $request->day_id)
+    //                     ->where('routine.time_slot_id', $prev[0])
+    //                     ->where('routine.batch_id', $request->batch_id)
+    //                     ->where('routine.teacher_id', $request->teacher_id)
+    //                     ->count();
+
+    //                 $prev_without_batch = DB::table('routine')
+    //                     ->where('routine.id', '!=', $request->routine_id)
+    //                     ->where('routine.day_id', $request->day_id)
+    //                     ->whereIn('routine.time_slot_id', $prev)
+    //                     ->where('routine.teacher_id', $request->teacher_id)
+    //                     ->count();
+    //             }
+    //         }
+
+    //         // $total_consecutive_theory_class = $prev_without_batch + $next_without_batch;
+    //         // $total_consecutive_theory_class_batch_wise = $prev_with_batch + $next_with_batch;
+
+    //         // if ($total_consecutive_theory_class_batch_wise >= 1) {
+    //         //     $message = ['type' => 'error', 'text' => 'Can not take 2 consecutive theory classes of same batch!'];
+    //         //     return json_encode($message);
+    //         // }
+    //         // if ($total_consecutive_theory_class > 1) {
+    //         //     $message = ['type' => 'error', 'text' => 'Can not take 3 consecutive theory classes in one day!'];
+    //         //     return json_encode($message);
+    //         // }
+    //     }
+
+    //     //            dd('ok');
+
+    //     if ($request->routine_id != '') {
+    //         // Checking existing data
+    //         $exists = FullRoutine::where([
+    //             ['batch_id', $request->batch_id],
+    //             ['routine.id', '!=', $request->routine_id],
+    //             ['section_id', $request->section_id],
+    //             ['day_id', $request->day_id],
+    //             ['time_slot_id', $request->time_slot_id],
+    //             ['teacher_id', $request->teacher_id],
+    //             ['course_id', $request->course_id],
+    //             ['room_id', $request->room_id],
+    //             ['yearly_session_id', $request->yearly_session_id],
+    //         ])->count();
+
+
+    //         // Checking if room wise time slot data exists
+    //         $exist_room_time_slot = FullRoutine::where([
+    //             ['routine.room_id', $request->room_id],
+    //             ['routine.id', '!=', $request->routine_id],
+    //             ['routine.day_id', $request->day_id],
+    //             ['routine.time_slot_id', $request->time_slot_id],
+    //             ['routine.yearly_session_id', $request->yearly_session_id]
+    //         ])->count();
+
+    //         // Checking if teacher wise time slot data exists
+    //         $exist_teacher_time_slot = FullRoutine::where([
+    //             ['routine.day_id', $request->day_id],
+    //             ['routine.time_slot_id', $request->time_slot_id],
+    //             ['routine.id', '!=', $request->routine_id],
+    //             ['routine.teacher_id', $request->teacher_id],
+    //             ['routine.yearly_session_id', $request->yearly_session_id]
+    //         ])->count();
+    //     } else {
+    //         // Checking existing data
+    //         $exists = FullRoutine::where([
+    //             ['batch_id', $request->batch_id],
+    //             ['section_id', $request->section_id],
+    //             ['day_id', $request->day_id],
+    //             ['time_slot_id', $request->time_slot_id],
+    //             ['teacher_id', $request->teacher_id],
+    //             ['course_id', $request->course_id],
+    //             ['room_id', $request->room_id],
+    //             ['yearly_session_id', $request->yearly_session_id],
+    //         ])->count();
+
+    //         $exist_room_time_slot = FullRoutine::where([
+    //             ['routine.room_id', $request->room_id],
+    //             ['day_id', $request->day_id],
+    //             ['time_slot_id', $request->time_slot_id],
+    //             ['routine.yearly_session_id', $request->yearly_session_id]
+    //         ])->count();
+
+    //         // Checking if teacher wise time slot data exists
+    //         $exist_teacher_time_slot = FullRoutine::where([
+    //             ['day_id', $request->day_id],
+    //             ['time_slot_id', $request->time_slot_id],
+    //             ['routine.teacher_id', $request->teacher_id],
+    //             ['routine.yearly_session_id', $request->yearly_session_id]
+    //         ])->count();
+    //     }
+
+    //     // Checking if assigned day is teacher's off day
+    //     $teacher_offday = TeachersOffday::where([
+    //         ['teacher_id', $request->teacher_id],
+    //         ['day_id', $request->day_id],
+    //     ])->count();
+
+
+    //     $routine = new FullRoutine;
+    //     $routine->batch_id = $request->batch_id;
+    //     $routine->section_id = $request->section_id;
+    //     $routine->day_id = $request->day_id;
+    //     $routine->teacher_id = $request->teacher_id;
+    //     $routine->course_id = $request->course_id;
+    //     $routine->room_id = $request->room_id;
+    //     $routine->created_by = Auth::user()->id;
+    //     $routine->yearly_session_id = $request->yearly_session_id;
+
+
+    //     //If data exists
+    //     if ($exists == 0) {
+    //         //If data room wise time slot data exists
+    //         // if ($exist_room_time_slot > 0) {
+    //         //     $message = ['type' => 'error', 'text' => 'Can not assign class on same room at same time slot'];
+    //         //     return json_encode($message);
+    //         // }
+
+    //         //If teachers offday
+    //         if ($teacher_offday > 0) {
+    //             $message = ['type' => 'error', 'text' => 'Cannot assign class on offday'];
+    //             return json_encode($message);
+    //         }
+    //         //If data exists on same teacher and same time slot
+    //         if ($exist_teacher_time_slot == 0) {
+
+    //             //If total class exceeds from given class slot
+
+    //             if ($request->routine_id == '') {
+    //                 if ($day_wise_slot == $exist_class_slots && $course->course_type == 0) {
+    //                     $message = ['type' => 'error', 'text' => 'Class slot limit exceeded!'];
+    //                     return json_encode($message);
+    //                 }
+
+    //                 if ($request->additional_time_slot) {
+    //                     $all_time_slot = array($request->time_slot_id, $request->additional_time_slot);
+    //                     foreach ($all_time_slot as $slot) {
+    //                         $data[] = [
+    //                             'time_slot_id' => $slot,
+    //                             'batch_id' => $request->batch_id,
+    //                             'section_id' => $request->section_id,
+    //                             'day_id' => $request->day_id,
+    //                             'teacher_id' => $request->teacher_id,
+    //                             'course_id' => $request->course_id,
+    //                             'room_id' => $request->room_id,
+    //                             'created_by' =>  Auth::user()->id,
+    //                             'yearly_session_id' => $request->yearly_session_id,
+    //                             'created_at' => now(),
+    //                             'updated_at' => now()
+    //                         ];
+    //                     }
+    //                     $save = FullRoutine::insert($data);
+    //                 } else {
+    //                     $routine->time_slot_id = $request->time_slot_id;
+    //                     $save = $routine->save();
+    //                 }
+
+    //                 if ($save) {
+    //                     $message = ['type' => 'success', 'text' => 'Data Successfully Inserted'];
+    //                 } else {
+    //                     $message = ['type' => 'error', 'text' => 'Data already exists for current data!'];
+    //                 }
+    //             } else {
+    //                 FullRoutine::where('id', '=', $request->routine_id)
+    //                     ->update(array(
+    //                         'batch_id' => $request->batch_id,
+    //                         'section_id' => $request->section_id,
+    //                         'day_id' => $request->day_id,
+    //                         'time_slot_id' => $request->time_slot_id,
+    //                         'teacher_id' => $request->teacher_id,
+    //                         'course_id' => $request->course_id,
+    //                         'edited_by' => Auth::user()->id,
+    //                         'room_id' => $request->room_id,
+    //                         'yearly_session_id' => $request->yearly_session_id,
+    //                     ));
+    //                 $message = ['type' => 'success', 'text' => 'Data Successfully Updated'];
+
+    //             }
+    //         } else {
+
+    //             $message = ['type' => 'error', 'text' => 'This Time slot already assigned for this teacher'];
+    //         }
+    //     } else {
+
+    //         $message = ['type' => 'error', 'text' => 'Data already exists!!!'];
+    //     }
+
+    //     return json_encode($message);
+    // }
     public function create(Request $request)
     {
         $evening_shift_id = Shift::where('slug', 'D')->pluck('id')->first();
@@ -689,6 +1138,8 @@ class FullRoutineController extends MasterController
 
                     if ($save) {
                         $message = ['type' => 'success', 'text' => 'Data Successfully Inserted'];
+                        // ✅ Invalidate + Refresh cache for that day
+                        $this->refreshRoutineCache($request->day_id, $request->yearly_session_id);
                     } else {
                         $message = ['type' => 'error', 'text' => 'Data already exists for current data!'];
                     }
@@ -706,6 +1157,8 @@ class FullRoutineController extends MasterController
                             'yearly_session_id' => $request->yearly_session_id,
                         ));
                     $message = ['type' => 'success', 'text' => 'Data Successfully Updated'];
+                    // ✅ Invalidate + Refresh cache for updated day
+                    $this->refreshRoutineCache($request->day_id, $request->yearly_session_id);
                 }
             } else {
 
@@ -718,6 +1171,7 @@ class FullRoutineController extends MasterController
 
         return json_encode($message);
     }
+
 
 
     public function class_slot_update(Request $request)
@@ -737,13 +1191,85 @@ class FullRoutineController extends MasterController
         return back();
     }
 
+    // public function routine_cell_delete(Request $request)
+    // {
+    //     $id = $request->id;
+    //     FullRoutine::where("id", $id)->delete();
+    //     Session::flash('message', 'Routine Cell Delete Successful!!');
+    //     return back();
+    // }
+
     public function routine_cell_delete(Request $request)
     {
         $id = $request->id;
-        FullRoutine::where("id", $id)->delete();
-        Session::flash('message', 'Routine Cell Delete Successful!!');
+
+        // Find the routine before deleting (to know which day's cache to clear)
+        $routine = FullRoutine::find($id);
+
+        if ($routine) {
+            $day_id = $routine->day_id;
+            $yearly_session_id = $routine->yearly_session_id;
+
+            // Delete routine
+            $routine->delete();
+
+            // 🔄 Refresh cache for that day
+            $this->refreshRoutineCache($day_id, $yearly_session_id);
+
+            Session::flash('message', 'Routine Cell Delete Successful!!');
+        } else {
+            Session::flash('error', 'Routine not found!');
+        }
+
         return back();
     }
+
+    // public function proxyStore(Request $request)
+    // {
+    //     $request->validate([
+    //         'full_routine_id' => 'required|integer|exists:routine,id',
+    //         'proxy_teacher_id' => 'required|integer|exists:teachers,id',
+    //         'proxy_date' => 'required|date',
+    //     ]);
+
+
+    //     // Update or create proxy record
+    //     ProxyRoutine::updateOrCreate(
+    //         [
+    //             'full_routine_id' => $request->full_routine_id,
+    //             'proxy_date' => $request->proxy_date,
+    //         ],
+    //         [
+    //             'proxy_teacher_id' => $request->proxy_teacher_id,
+    //         ]
+    //     );
+    //     $teacher = User::find($request->proxy_teacher_id);
+    //     $phone = $teacher->contact;
+
+    //     $routine = \App\Models\FullRoutine::with('time_slot')->find($request->full_routine_id);
+
+    //     if (!$routine || !$routine->time_slot) {
+    //         return back()->with('error', 'Time slot not found for the selected routine.');
+    //     }
+
+    //     $fromTime = \Carbon\Carbon::createFromFormat('H:i:s', $routine->time_slot->from)->format('g:i A');
+    //     $toTime = \Carbon\Carbon::createFromFormat('H:i:s', $routine->time_slot->to)->format('g:i A');
+    //     $formattedDate = \Carbon\Carbon::parse($request->proxy_date)->format('F j, Y');
+
+    //     $departmentName = $routine->batch->department_name ?? 'Unknown Department';
+    //     $sectionName = $routine->section->section_name ?? 'Unknown Section';
+
+
+    //     // $SmsText = "You have a proxy class on {$formattedDate} in {$departmentName}({$sectionName}) \n- ethnica";
+
+
+    //     // $url = "http://smpp.revesms.com:7788/sendtext?apikey=31ba9c0faae8cc74&secretkey=8eb1689e&callerID=1232&toUser=$phone&messageContent=" . rawurlencode($SmsText);
+
+    //     // $response = Http::get($url);
+    //     // $response = file_get_contents($url); //no need
+
+    //     return back()->with('success', 'Proxy teacher assigned successfully!');
+    // }
     public function proxyStore(Request $request)
     {
         $request->validate([
@@ -751,7 +1277,6 @@ class FullRoutineController extends MasterController
             'proxy_teacher_id' => 'required|integer|exists:teachers,id',
             'proxy_date' => 'required|date',
         ]);
-
 
         // Update or create proxy record
         ProxyRoutine::updateOrCreate(
@@ -763,30 +1288,32 @@ class FullRoutineController extends MasterController
                 'proxy_teacher_id' => $request->proxy_teacher_id,
             ]
         );
-        $teacher = User::find($request->proxy_teacher_id);
-        $phone = $teacher->contact;
 
-        $routine = \App\Models\FullRoutine::with('time_slot')->find($request->full_routine_id);
+        $teacher = Teacher::find($request->proxy_teacher_id);
+        $teacher = User::find($teacher->user_id);
+        $phone   = $teacher->contact;
+
+        $routine = \App\Models\FullRoutine::with(['time_slot', 'batch', 'section'])
+            ->find($request->full_routine_id);
 
         if (!$routine || !$routine->time_slot) {
             return back()->with('error', 'Time slot not found for the selected routine.');
         }
 
         $fromTime = \Carbon\Carbon::createFromFormat('H:i:s', $routine->time_slot->from)->format('g:i A');
-        $toTime = \Carbon\Carbon::createFromFormat('H:i:s', $routine->time_slot->to)->format('g:i A');
+        $toTime   = \Carbon\Carbon::createFromFormat('H:i:s', $routine->time_slot->to)->format('g:i A');
         $formattedDate = \Carbon\Carbon::parse($request->proxy_date)->format('F j, Y');
 
         $departmentName = $routine->batch->department_name ?? 'Unknown Department';
-        $sectionName = $routine->section->section_name ?? 'Unknown Section';
+        $sectionName    = $routine->section->section_name ?? 'Unknown Section';
 
+        $SmsText = "You have a proxy class on {$formattedDate} in {$departmentName} ({$sectionName})\n- ethnica";
 
-        // $SmsText = "You have a proxy class on {$formattedDate} in {$departmentName}({$sectionName}) \n- ethnica";
+        $url = "http://smpp.revesms.com:7788/sendtext?apikey=31ba9c0faae8cc74&secretkey=8eb1689e&callerID=1232&toUser=$phone&messageContent=" . rawurlencode($SmsText);
+        $response = Http::get($url);
 
-
-        // $url = "http://smpp.revesms.com:7788/sendtext?apikey=31ba9c0faae8cc74&secretkey=8eb1689e&callerID=1232&toUser=$phone&messageContent=" . rawurlencode($SmsText);
-
-        // $response = Http::get($url);
-        // $response = file_get_contents($url); //no need
+        // ✅ Refresh cache for that day
+        $this->refreshRoutineCache($routine->day_id, $routine->yearly_session_id);
 
         return back()->with('success', 'Proxy teacher assigned successfully!');
     }
