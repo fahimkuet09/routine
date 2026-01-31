@@ -11,6 +11,7 @@ use App\User;
 use App\Models\TeacherRank;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Cache;
 use Intervention\Image\ImageManagerStatic as Image;
 
 class TeacherController extends MasterController
@@ -110,6 +111,9 @@ class TeacherController extends MasterController
 
         User::find($user->id)->teacher()->save($teacher);
 
+        // Invalidate routine teachers cache so routine page shows new teacher
+        Cache::forget('routine_teachers');
+
         Session::flash('message', 'Teacher added successfully');
         return redirect()->route('teachers.index');
     }
@@ -208,6 +212,9 @@ class TeacherController extends MasterController
         $user->save();
         User::find($teacher->user_id)->teacher()->save($teacher);
 
+        // Invalidate routine teachers cache so routine page shows updated teacher
+        Cache::forget('routine_teachers');
+
         Session::flash('message', 'Teacher Updated successfully');
         return redirect()->route('teachers.index');
     }
@@ -223,6 +230,10 @@ class TeacherController extends MasterController
         $user = User::find($teacher->user_id);
         $user->teacher()->delete();
         $user->delete();
+
+        // Invalidate routine teachers cache so routine page no longer shows deleted teacher
+        Cache::forget('routine_teachers');
+
         Session::flash('delete-message', 'Teacher deleted successfully');
         return redirect()->route('teachers.index');
     }

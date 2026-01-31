@@ -159,7 +159,18 @@ class FullRoutineController extends MasterController
         // Use unique cache key per day (e.g., routine_Monday, routine_Tuesday...)
         $cacheKey = "routine_data_{$today}";
 
-        // Retrieve from cache or store forever
+        // Teachers: separate cache so we can invalidate when a teacher is added/updated
+        $teachersCacheKey = 'routine_teachers';
+        $teachers = Cache::remember($teachersCacheKey, 3600, function () {
+            return Teacher::select('teachers.*')
+                ->join('users', 'users.id', '=', 'teachers.user_id')
+                ->with(['user', 'rank'])
+                ->where('teachers.is_active', 'yes')
+                ->orderBy('users.lastname', 'asc')
+                ->get();
+        });
+
+        // Retrieve from cache or store forever (slots, sections, etc. — teachers loaded above)
         $data = Cache::rememberForever($cacheKey, function () use ($today, $yearly_session) {
 
             $slots = Day::with([
@@ -203,13 +214,6 @@ class FullRoutineController extends MasterController
                 ->whereNotNull('routine.edited_by')
                 ->first();
 
-            $teachers = Teacher::select('teachers.*')
-                ->join('users', 'users.id', '=', 'teachers.user_id')
-                ->with(['user', 'rank'])
-                ->where('teachers.is_active', 'yes')
-                ->orderBy('users.lastname', 'asc')
-                ->get();
-
             $assigned_class_distinct_day_count = FullRoutine::selectRaw('teacher_id, COUNT(DISTINCT day_id) as day_count')
                 ->groupBy('teacher_id')
                 ->get();
@@ -219,12 +223,10 @@ class FullRoutineController extends MasterController
             $courses = Course::where('is_active', 'yes')->get();
             $rooms = Room::where('is_active', 'yes')->get();
 
-
             return compact(
                 'sections',
                 'slots',
                 'rooms',
-                'teachers',
                 'courses',
                 'yearly_session',
                 'day_wise_slots',
@@ -235,6 +237,10 @@ class FullRoutineController extends MasterController
                 'today'
             );
         });
+
+        // Merge cached teachers into view data (teachers use separate cache key)
+        $data['teachers'] = $teachers;
+        $data['yearly_session'] = $yearly_session;
 
         return view('admin.routine.index', $data);
     }
