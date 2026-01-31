@@ -49,7 +49,7 @@
                             <!-- Assign Routine -->
 
                             @if(Auth::user()->role == 'admin')
-                            <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target=".routine_reset_{{$yearly_session}}">Full Routine Reset</button>
+                            <!-- <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target=".routine_reset_{{$yearly_session}}">Full Routine Reset</button> -->
 
                             <div class="modal fade routine_reset_{{$yearly_session}}" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
