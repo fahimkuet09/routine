@@ -1,0 +1,2 @@
+[14-May-2025 23:56:07 Asia/Dhaka] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 43712712 bytes) in /home/techsstation/public_html/routine/vendor/laravel/framework/src/Illuminate/View/Engines/PhpEngine.php on line 63
+[14-May-2025 23:56:23 Asia/Dhaka] PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 43712712 bytes) in /home/techsstation/public_html/routine/vendor/laravel/framework/src/Illuminate/View/Engines/PhpEngine.php on line 63
