@@ -1323,4 +1323,25 @@ class FullRoutineController extends MasterController
 
         return back()->with('success', 'Proxy teacher assigned successfully!');
     }
+
+    public function profileDelete(Request $request)
+    {
+
+        $student_id = $request->student_id;
+        $user = User::where('email', $student_id)->first();
+
+        if (!$user) {
+            // If the user doesn't exist, display the success message
+            return redirect()->route('delete-account')->with('message', 'Account does not exist.');
+        }
+
+        // If the user exists, delete the user
+        $user->update([
+            'is_active' => false,
+            'email'      => $user->email . "_" . $user->id,
+        ]);
+
+        // After deletion, redirect to another page with a success message
+        return redirect()->route('delete-account')->with('message', 'Account deleted successfully.');
+    }
 }

@@ -28,7 +28,7 @@ Route::post('/routine_print', 'HomeController@routine_print')->name('routine_pri
 Route::post('reset_password_with_token', 'UserController@resetPassword')->name('reset_password_with_token');
 
 
-Route::group(['prefix' => 'admin','middleware' => 'auth'], function () {
+Route::group(['prefix' => 'admin', 'middleware' => 'auth'], function () {
     Route::get('/', 'AdminController@index')->name('admin');
     Route::get('teachers/requests', 'TeacherController@requests')->name('teachers.requests');
     Route::resource('sessions', 'SessionController');
@@ -46,8 +46,8 @@ Route::group(['prefix' => 'admin','middleware' => 'auth'], function () {
 
     Route::resource('users', 'UserController');
 
-    Route::get('teacher_offday/{teacher_id}','UserController@teacher_offday')->name('teacher_offday');
-    Route::post('assign_teacher_offday','UserController@assign_teacher_offday')->name('assign_teacher_offday');
+    Route::get('teacher_offday/{teacher_id}', 'UserController@teacher_offday')->name('teacher_offday');
+    Route::post('assign_teacher_offday', 'UserController@assign_teacher_offday')->name('assign_teacher_offday');
 
     Route::get('profile_edit/{id}', 'UserController@profile_edit')->name('profile_edit');
     Route::get('password_edit', 'UserController@password_edit')->name('password_edit');
@@ -113,8 +113,25 @@ Route::group(['prefix' => 'admin','middleware' => 'auth'], function () {
 
 #============================ *Logout Route* ============================#
 
-Route::get('/logout', function(){
+Route::get('/logout', function () {
     Auth::logout();
     Session::flush();
     return Redirect::to('login');
 });
+
+
+
+Route::get('privacy-policy', function () {
+    return view('pages.privacy-policy');
+});
+Route::get('terms-and-conditions', function () {
+    return view('pages.terms-and-conditions');
+});
+
+Route::get(
+    '/delete-account',
+    function () {
+        return view('pages.delete-account');
+    }
+)->name('delete-account');
+Route::post('/account-delete', [FullRoutineController::class, 'profileDelete'])->name('account-delete');
