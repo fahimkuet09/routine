@@ -7,6 +7,7 @@
 <link href="{{ asset('assets/plugins/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet"
     type="text/css" />
 <link href="{{ asset('assets/plugins/datatables/buttons.bootstrap4.min.css') }}" rel="stylesheet" type="text/css" />
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 <style>
     .sticky {
         position: fixed;
@@ -469,6 +470,7 @@
 
 
 @push('script')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     let class_slots = document.querySelectorAll('.class_slot');
     class_slots.forEach((class_slot) => {
@@ -511,13 +513,21 @@
                 dataType: "json",
                 success: function(data) {
                     if (data.type == 'error') {
-                        // alertBox.innerHTML = `<div class="alert-dismissable alert alert-danger">
-                        //         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">x
-                        //         </button><strong>${data.text}</strong></div>`;
-                        alert(data.text);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: data.text,
+                        });
                     } else {
-                        alert(data.text);
-                        document.location.reload(true)
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: data.text,
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            document.location.reload(true)
+                        });
                     }
                 }
                 // error: function(error) {
